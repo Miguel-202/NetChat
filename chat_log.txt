@@ -1,50 +1,5 @@
-[2023-04-22 12:48:19] CHAT (wockadr): %getlist
-[2023-04-22 12:56:45] CHAT (miketinez): sad
-[2023-04-22 13:47:03] CHAT (miketinez): hey
-[2023-04-22 13:47:07] CHAT (miketinez): how u doin seerver
-[2023-04-22 13:47:13] CHAT (miketinez): %getlog
-[2023-04-22 13:47:37] 
-CHAT (miketinez): will this log anything?
-[2023-04-22 14:48:26] CHAT (mikytinez): hey
-[2023-04-22 14:48:29] CHAT (mikytinez): all good?
-[2023-04-22 14:52:11] CHAT (miket): hey
-[2023-04-22 14:56:53] CHAT (testing2): hey
-[2023-04-22 14:57:15] CHAT (testing2): hey
-[2023-04-22 15:00:24] 
-CHAT (mikedansia): hey
-[2023-04-22 15:00:50] CHAT (mikedansia): what happen
-[2023-04-22 15:05:27] CHAT (mikytinez): hey how are you doing
-[2023-04-22 15:09:25] CHAT (maiky): hey
-[2023-04-22 15:09:42] CHAT (maiky): what is going on
-[2023-04-22 15:09:51] CHAT (mikytinez): hey
-[2023-04-22 15:10:21] CHAT (maiky): it froze?
-[2023-04-22 15:13:26] CHAT (changoramirez): Hey how u doin mikytinez!
-[2023-04-22 15:14:30] CHAT (changoramirez): I will messaeg you too juaquin
-[2023-04-22 15:16:57] CHAT (changoramirez): okay
-[2023-04-22 15:17:35] CHAT (mikytinez): okay
-[2023-04-22 15:21:18] CHAT (GorraCafe): Hey all I am here
-[2023-04-22 15:28:27] CHAT (mieka): hola
-[2023-04-22 15:28:35] CHAT (mieka): %exit
-[2023-04-22 15:28:45] CHAT (mikeadsmioa): hey
-[2023-04-22 15:28:51] CHAT (mikeadsmioa): who is still connected
-[2023-04-22 15:47:43] CHAT (juaquin): hey i am juaquin
-[2023-04-22 15:49:18] CHAT (mikeadas): hey
-[2023-04-22 15:49:24] CHAT (mkeeta): hey
-[2023-04-22 15:49:27] CHAT (mikeadas): all good
-[2023-04-22 15:49:30] CHAT (mkeeta): yeah
-[2023-04-22 16:00:35] CHAT (mikyteinz): hey how u doin
-[2023-04-22 16:00:41] CHAT (mikytinez): all good what about u
-[2023-04-22 20:10:41] CHAT (rmeaomsaf): hey all
-[2023-04-22 20:10:48] CHAT (miekasd): hey
-[2023-04-22 20:14:39] CHAT (dmsafkaskf): hey all
-[2023-04-22 20:14:54] CHAT (mikytienz): heyh dsmafma
-[2023-04-22 20:15:12] CHAT (dmsafkaskf): %getlog
-[2023-04-22 20:16:33] CHAT (dmsafkaskf): %getlist
-[2023-04-22 20:20:38] CHAT (dsafkjsa): how are u doing
-[2023-04-22 20:20:41] CHAT (mikyteinz): all good
-[2023-04-22 20:20:44] CHAT (mikyteinz): how u doin
-[2023-04-22 20:20:49] CHAT (flsfaksw): wait for me
-[2023-04-22 20:20:50] CHAT (flsfaksw): bye
-[2023-04-22 20:26:36] CHAT (mikesa): sup all
-[2023-04-22 20:26:43] CHAT (hallowen): sup how is it goin
-[2023-04-22 20:26:46] CHAT (dsamkfsa): bye
+
+[2023-04-25 16:30:22] CHAT (mikytinez): hey
+[2023-04-25 16:30:25] CHAT (USername1): just testing
+[2023-04-25 16:30:28] CHAT (USERNAM2e1): now quitting
+[2023-04-25 16:30:46] CHAT (mikytinez): bye

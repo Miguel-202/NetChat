@@ -19,16 +19,20 @@ public:
     void sendToSpecificClient(std::string message, Client* client);
     void sendToAllClients(std::string message, Client* sender);
     void logMessage(std::string message);
+    void sendUdpBroadcast();
 private:
     int maxClients;
     std::vector<Client*> clients;
     fd_set master;
     fd_set read_fds;
-    SOCKET serverSocket;
+    SOCKET tcpServerSocket;
+    SOCKET udpServerSocket;
     int fdmax;
     const char* port;
     std::string logFileName;
     int logFile;
     void initialize();
     timeval timeout;
+    //Serer information
+    std::string serverIP;
 };

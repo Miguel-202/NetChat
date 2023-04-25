@@ -14,6 +14,7 @@
 #define MAX_CLIENTS 10
 //IP test: 127.0.0.1
 //Port test: 5000
+//Wireshark filter: ip.addr == 127.0.0.1 or tcp.port == 5000 or udp.port == 5000 ip.src = 127.0
 int main()
 {
     std::string input;
@@ -38,19 +39,10 @@ int main()
     {
         // Initialize Client
         Client client;
-
-        // Prompt the user (client) for the server TCP information (IP and Port)
-        std::string serverIP;
-        std::string serverPort;
-        std::cout << "Enter server IP address: ";
-        std::cin >> serverIP;
-        std::cout << "Enter server port number: ";
-        std::cin >> serverPort;
-
         try
         {
             // Connect to server
-            client.connectToServer(serverIP.c_str(), serverPort.c_str());
+            client.listenForUdpBroadcast();
             // Register username
             std::string username;
             std::cout << "Enter username: ";

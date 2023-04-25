@@ -20,8 +20,10 @@ public:
     SOCKET getSocket() const;
     std::string getUsername() const;
     void setUsername(std::string newUsername);
+    void listenForUdpBroadcast();
 private:
     SOCKET clientSocket;
+    SOCKET udpClientSocket;
     bool connected;
     std::string username;
 };

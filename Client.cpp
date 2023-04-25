@@ -20,9 +20,28 @@ Client::Client()
     }
     // Create a socket.
     clientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (clientSocket == INVALID_SOCKET) {
+    if (clientSocket == INVALID_SOCKET) 
+    {
         WSACleanup();
         throw std::runtime_error("Failed to create socket: " + std::to_string(WSAGetLastError()));
+    }
+
+    // Create a UDP socket.
+    udpClientSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (udpClientSocket == INVALID_SOCKET) 
+    {
+        WSACleanup();
+        throw std::runtime_error("Failed to create UDP socket: " + std::to_string(WSAGetLastError()));
+    }
+
+    // Set socket options for broadcast and reuse.
+    int broadcastEnable = 1;
+    result = setsockopt(udpClientSocket, SOL_SOCKET, SO_BROADCAST, (char*)&broadcastEnable, sizeof(broadcastEnable));
+    if (result == SOCKET_ERROR) 
+    {
+        closesocket(udpClientSocket);
+        WSACleanup();
+        throw std::runtime_error("Failed to set UDP socket options: " + std::to_string(WSAGetLastError()));
     }
 
     connected = false;
@@ -34,7 +53,60 @@ Client::~Client()
     {
         closeConnection();
     }
+    // Close the UDP socket.
+    closesocket(udpClientSocket);
     WSACleanup();
+}
+
+void Client::listenForUdpBroadcast()
+{
+    sockaddr_in udpClientAddr{};
+    udpClientAddr.sin_family = AF_INET;
+    udpClientAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    udpClientAddr.sin_port = htons(5000); //static_cast<unsigned short>(std::stoi(port)) in case of having a port number as const char* port similar to the server
+
+    // Bind the UDP socket.
+    int result = bind(udpClientSocket, (sockaddr*)&udpClientAddr, sizeof(udpClientAddr));
+    if (result == SOCKET_ERROR) {
+        throw std::runtime_error("Failed to bind UDP socket: " + std::to_string(WSAGetLastError()));
+    }
+
+    //// Set the UDP socket to non-blocking mode. Could fix the problem but It gives the WSAEWOULDBLOCK non blocking error 1003
+    //u_long mode = 1;
+    //if (ioctlsocket(udpClientSocket, FIONBIO, &mode) != 0) {
+    //    throw std::runtime_error("Failed to set UDP socket to non-blocking mode: " + std::to_string(WSAGetLastError()));
+    //}
+
+    // Set the UDP socket to receive broadcast messages.
+    int broadcastPermission = 1;
+    if (setsockopt(udpClientSocket, SOL_SOCKET, SO_BROADCAST, (char*)&broadcastPermission, sizeof(broadcastPermission)) < 0) 
+    {
+        throw std::runtime_error("Failed to set SO_BROADCAST for UDP client socket: " + std::to_string(WSAGetLastError()));
+    }
+
+    // Receive server broadcast.
+    char recvBuffer[256];
+    sockaddr_in serverBroadcastAddr{};
+    int serverBroadcastAddrSize = sizeof(serverBroadcastAddr);
+    result = recvfrom(udpClientSocket, recvBuffer, sizeof(recvBuffer) - 1, 0, (sockaddr*)&serverBroadcastAddr, &serverBroadcastAddrSize);
+    if (result == SOCKET_ERROR) 
+    {
+        throw std::runtime_error("Failed to receive UDP broadcast: " + std::to_string(WSAGetLastError()));
+    }
+    recvBuffer[result] = '\0';
+
+    // Extract server IP and port from the received broadcast.
+    std::string broadcastMessage(recvBuffer);
+    size_t separatorPos = broadcastMessage.find(':');
+    if (separatorPos == std::string::npos) {
+        throw std::runtime_error("Invalid broadcast message received");
+    }
+    std::string receivedServerIP = broadcastMessage.substr(0, separatorPos);
+    std::string receivedServerPort = broadcastMessage.substr(separatorPos + 1);
+
+    // Connect to the server using the received IP and port.
+    connectToServer(receivedServerIP.c_str(), receivedServerPort.c_str());
+    closesocket(udpClientSocket);
 }
 
 void Client::connectToServer(const char* serverIP, const char* port) 

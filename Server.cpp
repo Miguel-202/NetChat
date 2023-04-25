@@ -3,6 +3,7 @@
 #include "OutputValues.h"
 #include <fstream>
 #include <ws2tcpip.h>
+#include <thread>
 #pragma comment(lib, "Ws2_32.lib")
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
@@ -21,10 +22,14 @@ Server::Server(int maxClients, const char* port) : maxClients(maxClients), port(
 
     struct addrinfo* result_addr = NULL, hints;
     ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_PASSIVE;
+    hints.ai_flags = AI_PASSIVE; // Server address.
+    hints.ai_family = AF_INET; // IPv4 address.
+
+    hints.ai_socktype = SOCK_STREAM; // TCP connection!!!
+    hints.ai_protocol = IPPROTO_TCP; // TCP connection!!!
+
+    //hints.ai_socktype = SOCK_DGRAM; // UDP connection!!!
+    //hints.ai_protocol = IPPROTO_UDP; // UDP connection!!!
 
     result = getaddrinfo(NULL, port, &hints, &result_addr);
     if (result != 0) 
@@ -34,31 +39,53 @@ Server::Server(int maxClients, const char* port) : maxClients(maxClients), port(
         exit(ADDRESS_ERROR);
     }
     
-    serverSocket = socket(result_addr->ai_family, result_addr->ai_socktype, result_addr->ai_protocol);
-    if (serverSocket == INVALID_SOCKET) 
+    tcpServerSocket = socket(result_addr->ai_family, result_addr->ai_socktype, result_addr->ai_protocol);
+    if (tcpServerSocket == INVALID_SOCKET) 
     {
         std::cerr << "Error creating server socket: " << WSAGetLastError() << std::endl;
         freeaddrinfo(result_addr);
         WSACleanup();
         exit(SETUP_ERROR);
     }
-
-    result = bind(serverSocket, result_addr->ai_addr, (int)result_addr->ai_addrlen);
+    result = bind(tcpServerSocket, result_addr->ai_addr, (int)result_addr->ai_addrlen);
+    //result = bind(serverSocket, (sockaddr*)&serverAddr, sizeof(serverAddr));
     if (result == SOCKET_ERROR) {
         std::cerr << "Error binding server socket: " << WSAGetLastError() << std::endl;
         freeaddrinfo(result_addr);
-        closesocket(serverSocket);
+        closesocket(tcpServerSocket);
         WSACleanup();
         exit(BIND_ERROR);
     }
 
+    // Create a UDP socket
+    udpServerSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (udpServerSocket == INVALID_SOCKET) {
+        std::cerr << "Can't create UDP socket: " << WSAGetLastError() << std::endl;
+        closesocket(tcpServerSocket);
+        WSACleanup();
+        exit(SETUP_ERROR);
+    }
+
+    // Enable broadcast for the UDP socket
+    int broadcast = 1;
+    result = setsockopt(udpServerSocket, SOL_SOCKET, SO_BROADCAST, (char*)&broadcast, sizeof(broadcast));
+    if (result == SOCKET_ERROR) {
+        std::cerr << "Can't enable UDP broadcast: " << WSAGetLastError() << std::endl;
+        closesocket(tcpServerSocket);
+        closesocket(udpServerSocket);
+        WSACleanup();
+        exit(SETUP_ERROR);
+    }
+
+    //TCP Close
     freeaddrinfo(result_addr);
 
-    result = listen(serverSocket, SOMAXCONN);
+    result = listen(tcpServerSocket, SOMAXCONN);
     if (result == SOCKET_ERROR) 
     {
         std::cerr << "Error setting server socket to listen: " << WSAGetLastError() << std::endl;
-        closesocket(serverSocket);
+        closesocket(tcpServerSocket);
+        closesocket(udpServerSocket);
         WSACleanup();
         exit(SETUP_ERROR);
     }
@@ -69,35 +96,41 @@ Server::~Server() {
         closesocket(client->getSocket());
         delete client;
     }
-    closesocket(serverSocket);
+    closesocket(tcpServerSocket);
     WSACleanup();
 }
 
 
 void Server::run() {
     // Prompt user for server IP and port
-    std::string serverIP;
     std::cout << "Enter server IP address: ";
     std::cin >> serverIP;
+    //serverIP = "255.255.255.255";
 
     // Initialize server and start listening
     std::cout << "Starting server..." << std::endl;
     std::cout << "IP: " << serverIP << ", Port: " << port << std::endl;
 
     // Set up server socket to listen for incoming connections
-    fdmax = serverSocket;
+    fdmax = tcpServerSocket;
     FD_ZERO(&master);
     FD_ZERO(&read_fds);
-    FD_SET(serverSocket, &master);
+    FD_SET(tcpServerSocket, &master);
     timeout.tv_sec = 1;
+    
+    // Start thread for sending UDP broadcast
+    std::thread udpThread(&Server::sendUdpBroadcast, this);
+    udpThread.detach();
 
     // Main loop for server
     while (true) 
     {
         read_fds = master;
-        int highest_fd = serverSocket;
-        for (const auto& client : clients) {
-            if (client->getSocket() > highest_fd) {
+        int highest_fd = tcpServerSocket;
+        for (const auto& client : clients) 
+        {
+            if (client->getSocket() > highest_fd) 
+            {
                 highest_fd = client->getSocket();
             }
         }
@@ -107,13 +140,13 @@ void Server::run() {
         if (result == SOCKET_ERROR) 
         {
             std::cerr << "Error in select: " << WSAGetLastError() << std::endl;
-            closesocket(serverSocket);
+            closesocket(tcpServerSocket);
             WSACleanup();
             exit(PARAMETER_ERROR);
         }
 
         // Check if new client connection is available
-        if (FD_ISSET(serverSocket, &read_fds)) 
+        if (FD_ISSET(tcpServerSocket, &read_fds)) 
         {
             acceptClient();
         }
@@ -128,52 +161,38 @@ void Server::run() {
         }
 
         // Remove clients with an INVALID_SOCKET
-        for (int i = 0; i < clients.size();)
+        clients.erase(
+            std::remove_if(clients.begin(), clients.end(),  [](Client* client) 
+                {
+                    if (client->getSocket() == INVALID_SOCKET) 
+                    {
+                        std::cout << "(" << client->getUsername() << ") HAS DISCONNECTED" << std::endl;
+                        closesocket(client->getSocket());
+                        delete client;
+                        return true;
+                    }
+                    return false;
+                }),
+            clients.end());
+    }
+}
+
+void Server::sendUdpBroadcast() {
+    sockaddr_in udpBroadcastAddr{};
+    udpBroadcastAddr.sin_family = AF_INET;
+    udpBroadcastAddr.sin_addr.s_addr = INADDR_BROADCAST;
+    udpBroadcastAddr.sin_port = htons(static_cast<unsigned short>(std::stoi(port)));
+
+    while (true) 
+    {
+        std::string broadcastMessage = serverIP + ":" + std::string(port); //"255.255.255.255:" if addres dosen't work
+        int result = sendto(udpServerSocket, broadcastMessage.c_str(), broadcastMessage.size(), 0, (sockaddr*)&udpBroadcastAddr, sizeof(udpBroadcastAddr));
+        if (result == SOCKET_ERROR) 
         {
-            if (clients[i]->getSocket() == INVALID_SOCKET)
-            {
-                delete clients[i];
-                clients.erase(clients.begin() + i);
-            }
-            else
-            {
-                ++i;
-            }
+            std::cerr << "Error sending UDP broadcast: " << WSAGetLastError() << std::endl;
+            break;
         }
-        //// Check all connected clients for incoming messages
-        //for (int i = 0; i < clients.size(); i++)
-        //{
-        //    SOCKET clientSocket = clients[i]->getSocket();
-        //    if (FD_ISSET(clientSocket, &read_fds))
-        //    {
-        //        handleClientRequest(clients[i]);
-        //    }
-        //    if (clients[i]->getSocket() == INVALID_SOCKET)
-        //    {
-        //        delete clients[i];
-        //        clients.erase(clients.begin() + i);
-        //    }
-        //}
-        //int clientSize = clients.size();
-        //for (int i = 0; i < clientSize; i++) 
-        //{
-        //    SOCKET clientSocket = clients[i]->getSocket();
-        //    // Check if the client socket is valid before proceeding
-        //    if (clientSocket != INVALID_SOCKET && FD_ISSET(clientSocket, &read_fds))
-        //    {
-        //        handleClientRequest(clients[i]);
-        //    }
-        //    // After handling the request, check again if the socket is invalid
-        //    // and remove the client if necessary
-        //    if (clients[i]->getSocket() == INVALID_SOCKET)
-        //    {
-        //        delete clients[i];
-        //        clients.erase(clients.begin() + i);
-        //
-        //        // Decrement the index to account for the removed client
-        //        i--; clientSize--;
-        //    }
-        //}
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 }
 
@@ -181,7 +200,7 @@ void Server::acceptClient() {
     struct sockaddr_in clientAddr {};
     int clientAddrLen = sizeof(clientAddr);
 
-    SOCKET clientSocket = accept(serverSocket, (sockaddr*)&clientAddr, &clientAddrLen);
+    SOCKET clientSocket = accept(tcpServerSocket, (sockaddr*)&clientAddr, &clientAddrLen);
 
     // Check for errors
     if (clientSocket == INVALID_SOCKET) 
@@ -335,43 +354,28 @@ bool Server::handleClientRequest(Client* client)
     { 
         // Send a message to the client before closing the connection
         std::string goodbyeMessage = "EXIT Goodbye! You have been disconnected.";
-        //send(client->getSocket(), goodbyeMessage.c_str(), goodbyeMessage.size(), 0);
         sendToSpecificClient(goodbyeMessage, client);
-
+        std::cout << "(" << client->getUsername() << ") HAS DISCONNECTED";
         // Disable sending on the socket to give the client a chance to read the message
         shutdown(client->getSocket(), SD_SEND);
 
         // Wait for the client to acknowledge the message
         char buffer[256];
         recv(client->getSocket(), buffer, sizeof(buffer), 0);
-
-        // user wants to exit
+        int recvResult = recv(client->getSocket(), buffer, sizeof(buffer), 0);
+        if (recvResult == SOCKET_ERROR) {
+            std::cerr << "Error receiving acknowledgment: " << WSAGetLastError() << std::endl;
+        }
+        // Close the client socket
         closesocket(client->getSocket());
         FD_CLR(client->getSocket(), &master);
-        for (auto it = clients.begin(); it != clients.end(); ++it)
-        {
-            if ((*it)->getSocket() == client->getSocket())
-            {
-                delete (*it);
-                clients.erase(it);
-                break;
-            }
+
+        // Remove the client from the clients list
+        auto it = std::find_if(clients.begin(), clients.end(), [&client](const Client* c) { return c->getSocket() == client->getSocket(); });
+        if (it != clients.end()) {
+            delete (*it);
+            clients.erase(it);
         }
-        //// Send a message to the client before closing the connection
-        //std::string goodbyeMessage = "Goodbye! You have been disconnected.";
-        //send(client->getSocket(), goodbyeMessage.c_str(), goodbyeMessage.size(), 0);
-        //// user wants to exit
-        //closesocket(client->getSocket());
-        //FD_CLR(client->getSocket(), &master);
-        //for (auto it = clients.begin(); it != clients.end(); ++it)
-        //{
-        //    if ((*it)->getSocket() == client->getSocket())
-        //    {
-        //        delete (*it);
-        //        clients.erase(it);
-        //        break;
-        //    }
-        //}
     }
     else if (message.find("$chat") == 0)
     {
@@ -407,7 +411,7 @@ void Server::sendToAllClients(std::string message, Client* sender) {
     int messageSize = static_cast<int>(message.length());
     for (auto& client : clients)
     {
-        if (client->getSocket() != serverSocket && client->getSocket() != sender->getSocket())
+        if (client->getSocket() != tcpServerSocket && client->getSocket() != sender->getSocket())
         {
             int result = send(client->getSocket(), reinterpret_cast<char*>(&messageSize), sizeof(messageSize), 0);
             if (result == SOCKET_ERROR)
@@ -445,14 +449,14 @@ void Server::initialize() {
     FD_ZERO(&read_fds);
 
     // add the server socket to the master set
-    FD_SET(serverSocket, &master);
+    FD_SET(tcpServerSocket, &master);
 
     // set the timeout value for select
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
 
     // set the initial maximum file descriptor to the server socket
-    fdmax = serverSocket;
+    fdmax = tcpServerSocket;
 }
 
 
