@@ -56,3 +56,17 @@ NetChat is licensed under the MIT License.
 
 ##Contributions
 Contributions to NetChat are welcome! If you'd like to contribute, please submit a pull request. Before submitting a pull request, please make sure your code follows the existing coding conventions and passes all tests.
+
+## Screenshots
+
+### TCP Connection Setup
+
+![TCP Connection Setup Screenshot](/NetChat/TCP_ConnectionSetup_Screenshot.png)
+
+This screenshot shows the TCP connection setup process for NetChat.
+
+### UDP Broadcast
+
+![UDP Broadcast Screenshot](/NetChat/UDP_Broadcast_Screenshot.png)
+
+This screenshot shows NetChat in action, broadcasting a message to all connected clients over UDP.
