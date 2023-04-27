@@ -1,5 +1,18 @@
-
-[2023-04-25 16:30:22] CHAT (mikytinez): hey
-[2023-04-25 16:30:25] CHAT (USername1): just testing
-[2023-04-25 16:30:28] CHAT (USERNAM2e1): now quitting
-[2023-04-25 16:30:46] CHAT (mikytinez): bye
+CHAT LOG
+[2023-04-27 11:57:45] CHAT (USER1): hey
+[2023-04-27 12:11:27] CHAT (Client): A
+[2023-04-27 12:11:51] CHAT (Client): hello
+[2023-04-27 12:11:52] CHAT (Jesse): Hello
+[2023-04-27 12:25:28] CHAT (guapango): hey mike
+[2023-04-27 12:25:31] CHAT (mikyitnez): hey guapango
+[2023-04-27 12:25:32] CHAT (guapango): bye
+[2023-04-27 12:25:35] CHAT (mikyitnez): no wait
+[2023-04-27 12:54:14] CHAT (das): hey
+[2023-04-27 12:54:16] CHAT (favca): nice
+[2023-04-27 12:54:18] CHAT (favca): still working
+[2023-04-27 12:54:24] CHAT (das): yo
+[2023-04-27 12:54:43] CHAT (fasfd): hey
+[2023-04-27 13:00:52] CHAT (User3): hey all
+[2023-04-27 13:01:06] CHAT (User3): bye all
+[2023-04-27 13:01:21] CHAT (User2): yes just user 1 and user 2
+[2023-04-27 13:01:26] CHAT (User2): now you are alone, bye

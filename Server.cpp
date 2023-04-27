@@ -209,11 +209,15 @@ void Server::acceptClient() {
         return;
     }
     // Check if server is full
-    if (clients.size() == maxClients) 
+    if (clients.size() >= maxClients) //acount for index
     {
         std::string message = "SV_FULL";
-        send(clientSocket, message.c_str(), message.size() + 1, 0);
+        Client* disconnectingClient = new Client();
+        disconnectingClient->setSocket(clientSocket);
+        sendToSpecificClient(message, disconnectingClient);
+        std::this_thread::sleep_for(std::chrono::seconds(1));
         closesocket(clientSocket);
+        delete disconnectingClient;
         return;
     }
     // Add client to list of connected clients
@@ -289,14 +293,13 @@ bool Server::handleClientRequest(Client* client)
     if (message.find("$register") == 0)
     {
         std::string username = message.substr(10, message.size() - 10);
-        if (clients.size() >= maxClients)
+        if (clients.size() > maxClients)
         {
-            // capacity full
-            std::string reply = "SV_FULL";
-            send(client->getSocket(), reply.c_str(), reply.size(), 0);
+            std::string message = "SV_FULL";
+            sendToSpecificClient(message, client);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
             closesocket(client->getSocket());
-            FD_CLR(client->getSocket(), &master);
-            return false;
+            delete client;
         }
         else 
         {
@@ -355,7 +358,7 @@ bool Server::handleClientRequest(Client* client)
         // Send a message to the client before closing the connection
         std::string goodbyeMessage = "EXIT Goodbye! You have been disconnected.";
         sendToSpecificClient(goodbyeMessage, client);
-        std::cout << "(" << client->getUsername() << ") HAS DISCONNECTED";
+        std::cout << "(" << client->getUsername() << ") HAS DISCONNECTED\n";
         // Disable sending on the socket to give the client a chance to read the message
         shutdown(client->getSocket(), SD_SEND);
 

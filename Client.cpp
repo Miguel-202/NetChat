@@ -4,12 +4,13 @@
 #include "OutputValues.h"
 #include <stdexcept>
 #include <iostream>
+#include <fstream>
 #include <vector>
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #pragma warning(disable: 4996)
 
-Client::Client() 
+Client::Client() : logFileName("client_log.txt")
 {
     // Initialize Winsock.
     WSADATA wsaData;
@@ -314,16 +315,28 @@ std::string Client::receiveMessage(bool& flag)
         }
         else if (message.find("LIST") == 0)
         {
-            return ("\033[2K\r" + message.substr(5) + "Enter command or message: ");
+            return ("\033[2K\r" + message.substr(5) + "\nEnter command or message: ");
         }
         else if (message.find("LOG") == 0)
         {
-            return ("\033[2K\r" + message.substr(4) + "Enter command or message: ");
+            //check if clientLog.txt exists or else create it and write on it
+            std::ofstream logFile(logFileName, std::ios::app);
+            if (!logFile.good()) {
+                std::cerr << "Error opening log file." << std::endl;
+                return "Error opening file\nEnter command or message: ";
+            }
+            logFile << message.substr(4) << std::endl;
+            return ("\033[2K\r" + message.substr(4) + "\nEnter command or message: ");
         }
         else if (message.find("EXIT") == 0)
         {
             flag = true;
             return ("\033[2K\r" + message.substr(5));
+        }
+        else if (message.find("SV_FULL") == 0)
+        {
+            flag = true;
+            return "Server is currently full";
         }
         else
         {

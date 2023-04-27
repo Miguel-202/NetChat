@@ -11,7 +11,7 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
-#define MAX_CLIENTS 10
+#define MAX_CLIENTS 3
 //IP test: 127.0.0.1
 //Port test: 5000
 //Wireshark filter: ip.addr == 127.0.0.1 or tcp.port == 5000 or udp.port == 5000 ip.src = 127.0
@@ -67,8 +67,6 @@ int main()
                     {
                         std::string message = client.receiveMessage(quitFlag);
                         if (message != "")
-                            if(quitFlag)
-                                break;
                             std::cout << message;
                     }
                     catch (const std::exception& ex)
@@ -77,6 +75,8 @@ int main()
                         break;
                     }
                 }
+                exit(0);
+                //return 0;
             });
 
         // Start a thread to listen for user input

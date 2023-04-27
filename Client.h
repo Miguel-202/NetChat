@@ -26,6 +26,8 @@ private:
     SOCKET udpClientSocket;
     bool connected;
     std::string username;
+
+    std::string logFileName;
 };
 
 
