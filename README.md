@@ -61,12 +61,12 @@ Contributions to NetChat are welcome! If you'd like to contribute, please submit
 
 ### TCP Connection Setup
 
-![TCP Connection Setup Screenshot](/NetChat/TCP_ConnectionSetup_Screenshot.png)
+![TCP Connection Setup Screenshot](/TCP_ConnectionSetup_Screenshot.png)
 
 This screenshot shows the TCP connection setup process for NetChat.
 
 ### UDP Broadcast
 
-![UDP Broadcast Screenshot](/NetChat/UDP_Broadcast_Screenshot.png)
+![UDP Broadcast Screenshot](/UDP_Broadcast_Screenshot.png)
 
 This screenshot shows NetChat in action, broadcasting a message to all connected clients over UDP.
