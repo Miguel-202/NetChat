@@ -1,4 +1,11 @@
-# NetChat
+<h1 align="center">
+  NetChat
+</h1>
+<p align="center">
+  <img src="/netchatLogo.png" alt="NetChat Logo" width="150">
+</p>
+
+
 NetChat is a console-based chat application that allows users to communicate with each other over TCP and UDP connections. The application is written in C++ and uses sockets to establish connections between clients. Users can send and receive text messages in real-time, as well as view their chat history. The application includes error handling and input validation to ensure a smooth user experience.
 
 
